@@ -1,0 +1,35 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: dotnetrest-run-
+  labels:
+    app.kubernetes.io/name: dotnetrest
+spec:
+  pipelineRef:
+    name: dotnetrest-pipeline
+
+  taskRunTemplate:
+    serviceAccountName: dotnetrest-pipeline-sa
+
+  params:
+    - name: repo-url
+      value: https://github.com/wlanboy/dotnet-container.git
+    - name: revision
+      value: main
+    - name: image
+      value: registry.registry.svc.cluster.local:5000/dotnetrest:latest
+    - name: dockerfile
+      value: dotnetrest/Dockerfile
+
+  workspaces:
+    - name: shared-data
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 2Gi
+
+  timeouts:
+    pipeline: 1h0m0s

@@ -1,0 +1,74 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: dotnetrest-pipeline
+  labels:
+    app.kubernetes.io/name: dotnetrest
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/displayName: "dotnetrest: Git Clone → Kaniko Build (Native AOT) → Push"
+spec:
+  description: >-
+    Two-stage pipeline:
+      1. clone       – checks out the source repository
+      2. docker-push – builds the Native-AOT image with Kaniko (dotnet restore/publish
+                        happen inside the Dockerfile's build stage) and pushes to the
+                        local k3s registry
+
+  params:
+    - name: repo-url
+      type: string
+      default: https://github.com/wlanboy/dotnet-container.git
+    - name: revision
+      type: string
+      default: main
+    - name: image
+      type: string
+      default: registry.registry.svc.cluster.local:5000/dotnetrest:latest
+    - name: dockerfile
+      type: string
+      default: dotnetrest/Dockerfile
+
+  workspaces:
+    - name: shared-data
+      description: PVC shared between clone and kaniko.
+
+  results:
+    - name: IMAGE_DIGEST
+      description: SHA256 digest of the pushed image.
+      value: $(tasks.docker-push.results.IMAGE_DIGEST)
+
+  tasks:
+    # 1. Clone
+    - name: clone
+      taskRef:
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: shared-data
+      params:
+        - name: url
+          value: $(params.repo-url)
+        - name: revision
+          value: $(params.revision)
+        - name: deleteExisting
+          value: "true"
+
+    # 2. Build (Native AOT via Dockerfile multi-stage) & push to local k3s registry
+    - name: docker-push
+      taskRef:
+        name: kaniko-build-push
+      runAfter:
+        - clone
+      workspaces:
+        - name: source
+          workspace: shared-data
+      params:
+        - name: IMAGE
+          value: $(params.image)
+        - name: DOCKERFILE
+          value: $(params.dockerfile)
+        - name: CONTEXT
+          value: dotnetrest
+        - name: REVISION
+          value: $(tasks.clone.results.commit)
