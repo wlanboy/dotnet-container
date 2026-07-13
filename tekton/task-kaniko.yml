@@ -1,0 +1,41 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: kaniko-build-push
+spec:
+  params:
+    - name: IMAGE
+      type: string
+      description: Full image reference to push (registry/name:tag).
+    - name: DOCKERFILE
+      type: string
+      description: Path to Dockerfile, relative to the workspace root.
+      default: Dockerfile
+    - name: CONTEXT
+      type: string
+      description: Build context directory, relative to the workspace root.
+      default: "."
+    - name: REVISION
+      type: string
+      description: Value passed as the Dockerfile's REVISION build-arg (e.g. git commit SHA).
+      default: "unknown"
+
+  workspaces:
+    - name: source
+
+  results:
+    - name: IMAGE_DIGEST
+      description: SHA256 digest of the pushed image.
+
+  steps:
+    - name: build-and-push
+      image: gcr.io/kaniko-project/executor:latest
+      args:
+        - --dockerfile=$(workspaces.source.path)/$(params.DOCKERFILE)
+        - --context=$(workspaces.source.path)/$(params.CONTEXT)
+        - --destination=$(params.IMAGE)
+        - --build-arg=REVISION=$(params.REVISION)
+        - --insecure
+        - --skip-tls-verify
+        - --digest-file=$(results.IMAGE_DIGEST.path)
+        - --ignore-path=/product_uuid
