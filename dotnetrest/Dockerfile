@@ -10,12 +10,17 @@ WORKDIR /src
 # im Cache, auch wenn sich der Sourcecode ständig ändert -> spart Build-Zeit
 COPY dotnetrest.csproj ./
 # -r linux-x64 restauriert direkt für die Ziel-Runtime, passend zum publish unten
-RUN dotnet restore dotnetrest.csproj -r linux-x64
+# Cache-Mount für den NuGet-Package-Cache (analog zum Maven ~/.m2-Mount):
+# ohne Docker-Layer-Cache-Hit (z.B. nach Codeänderung) müssten sonst alle
+# Pakete erneut aus dem Netz geladen werden
+RUN --mount=type=cache,target=/root/.nuget/packages \
+    dotnet restore dotnetrest.csproj -r linux-x64
 
 # 2. Sourcecode zuletzt kopieren
 # Code ändert sich häufiger als Abhängigkeiten -> invalidiert den Cache erst hier
 COPY . .
-RUN dotnet publish dotnetrest.csproj \
+RUN --mount=type=cache,target=/root/.nuget/packages \
+    dotnet publish dotnetrest.csproj \
     -c Release -r linux-x64 \
     -o /app/publish
 # -c Release: optimierter Build, Pflicht für Produktion
@@ -27,6 +32,14 @@ RUN dotnet publish dotnetrest.csproj \
 # -> kleinstmögliches Image, keine .NET-Runtime, weniger Angriffsfläche
 FROM mcr.microsoft.com/dotnet/runtime-deps:10.0 AS runtime
 WORKDIR /app
+
+# OCI-Labels für Traceability in Registry/Pipeline (welcher Commit/Repo steckt im Image)
+# REVISION wird beim Build via --build-arg REVISION=$(git rev-parse HEAD) gesetzt
+ARG REVISION=unknown
+LABEL org.opencontainers.image.title="dotnetrest" \
+      org.opencontainers.image.description="Minimal Todo REST API (.NET 10, Native AOT)" \
+      org.opencontainers.image.source="https://github.com/wlanboy/dotnet-container" \
+      org.opencontainers.image.revision="${REVISION}"
 
 # Deaktiviert Diagnose-Pipes/EventPipe (Debugger-Attach, Profiling) -
 # unnötiger Angriffsvektor/Overhead in Produktion
