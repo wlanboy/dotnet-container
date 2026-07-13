@@ -16,7 +16,13 @@ builder.Services.AddHealthChecks()
     .AddCheck("live", () => HealthCheckResult.Healthy(), tags: ["live"])
     .AddCheck("ready", () => HealthCheckResult.Healthy(), tags: ["ready"]);
 
+// Liefert für unhandled Exceptions einen RFC-7807-konformen ProblemDetails-Body
+// statt eines nackten 500 ohne Inhalt
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
