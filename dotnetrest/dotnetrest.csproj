@@ -1,20 +1,30 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
+    <!-- Muss zur .NET-Version der Docker-Images (sdk:10.0-aot / runtime-deps:10.0) passen -->
     <TargetFramework>net10.0</TargetFramework>
-    <RuntimeIdentifiers>win-x64;win-arm64;osx-arm64;linux-x64;linux-arm64;linux-musl-x64</RuntimeIdentifiers>
+    <!-- Native AOT erzeugt plattformspezifische Binaries statt portablem IL -> jede Zielplattform muss hier stehen; Docker-Build nutzt konkret linux-x64 -->
+    <!-- win-x64;win-arm64;osx-arm64;linux-x64;linux-arm64;linux-musl-x64 -->
+    <RuntimeIdentifiers>linux-x64</RuntimeIdentifiers>
+    <!-- Best Practice: fängt NullReferenceExceptions schon zur Compile-Zeit ab -->
     <Nullable>enable</Nullable>
+    <!-- Reduziert Boilerplate-usings, rein stilistisch -->
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Verzicht auf ICU/Kultur-Daten -> kleineres AOT-Binary und erlaubt Runtime-Image ohne libicu -->
     <InvariantGlobalization>true</InvariantGlobalization>
 
+    <!-- Bündelt die .NET-Runtime im Output -> Runtime-Image braucht kein dotnet/aspnet-Image, nur OS-Libs -->
     <SelfContained>true</SelfContained>
+    <!-- Erzwingt Self-Contained explizit auch für den publish-Task (wird nicht immer automatisch übernommen) -->
     <PublishSelfContained>true</PublishSelfContained>
 
+    <!-- Kernschalter: nativer Maschinencode statt IL+JIT -> schnellerer Kaltstart, weniger Speicher, kein Runtime-Overhead im Container -->
     <PublishAot>true</PublishAot>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- CreateSlimBuilder (Program.cs) enthält OpenAPI-Support nicht standardmäßig -> für MapOpenApi manuell nachgezogen -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
   </ItemGroup>
-  
+
 </Project>
