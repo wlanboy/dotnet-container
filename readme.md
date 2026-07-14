@@ -7,13 +7,18 @@ schlankes, produktionsnahes Container-Image mit Native AOT.
 
 ```
 dotnetrest/
-├── Program.cs                     # App-Setup, Middleware, Endpunkte
-├── Todo.cs                        # Todo-Record
-├── TodoService.cs                 # In-Memory-Datenhaltung (Demo, kein DB-Zugriff)
-├── appsettings.json                # Basis-Konfiguration (Prod)
-├── appsettings.Development.json    # Override für lokale Entwicklung
+├── Program.cs                      # App-Setup, Middleware, Health-Check-Wiring
+├── TodoEndpoints.cs                 # Endpunkt-Definitionen (MapTodoEndpoints)
+├── AppJsonSerializerContext.cs      # JSON-Source-Generator-Context (AOT)
+├── Todo.cs                          # Todo-Record
+├── TodoService.cs                   # In-Memory-Datenhaltung (Demo, kein DB-Zugriff)
+├── appsettings.json                 # Basis-Konfiguration (Prod)
+├── appsettings.Development.json     # Override für lokale Entwicklung
 ├── dotnetrest.csproj
 ├── Dockerfile
+k8s/
+├── deployment.yaml                  # Deployment inkl. Health-Probes, GC-Tuning
+├── configmap.yaml                   # Beispiel-Overlay für appsettings.Production.json
 ```
 
 ## Endpunkte
@@ -28,6 +33,41 @@ dotnetrest/
 
 Schreibende Endpunkte (POST/PUT/DELETE) sind aktuell nicht implementiert — die
 `TodoService`-Daten sind rein statisch für Demo-Zwecke.
+
+## Konfiguration überschreiben (`/app/config`-Overlay)
+
+`Program.cs` lädt zusätzlich zur image-gebackenen `appsettings.json` optional
+`/app/config/appsettings.Production.json`, danach erneut Environment-Variablen
+(siehe Kommentar in `Program.cs`). Priorität, von niedrig nach hoch:
+
+1. `appsettings.json` (im Image, `ASPNETCORE_ENVIRONMENT`-Datei falls vorhanden)
+2. `/app/config/appsettings.Production.json` (Overlay, optional)
+3. Environment-Variablen (z.B. `ASPNETCORE_...`, per ConfigMap/Secret als env oder direkt gesetzt)
+
+### Docker run
+
+```bash
+docker build --build-arg REVISION=$(git rev-parse HEAD) -t dotnetrest ./dotnetrest
+
+# ohne Overlay - appsettings.json aus dem Image greift
+docker run --rm -p 8080:8080 dotnetrest
+
+# mit lokalem Overlay, analog zum ConfigMap-Mount in k8s/deployment.yaml
+docker run --rm -p 8080:8080 \
+  -v "$(pwd)/appsettings.Production.json:/app/config/appsettings.Production.json:ro" \
+  dotnetrest
+```
+
+### Kubernetes
+
+```bash
+kubectl apply -f k8s/configmap.yaml   # optional - ohne ConfigMap greift appsettings.json aus dem Image
+kubectl apply -f k8s/deployment.yaml
+```
+
+`k8s/configmap.yaml` ist ein Beispiel-Overlay (Key `appsettings.Production.json`,
+gemountet unter `/app/config`, siehe `k8s/deployment.yaml`). Eigene Werte dort
+anpassen oder die ConfigMap weglassen, wenn die Image-Defaults ausreichen.
 
 ## Warum Native AOT?
 
@@ -70,10 +110,8 @@ JSON-Source-Generator (`AppJsonSerializerContext`) statt Standard-Serializer.
   reagiert der Container sauber auf Graceful Shutdown.
 - **OCI-Labels** (`org.opencontainers.image.*`): machen im Image nachvollziehbar,
   aus welchem Repo/Commit es gebaut wurde — wichtig für Traceability in Registry
-  und CI/CD-Pipeline. `REVISION` wird beim Build gesetzt, z.B.:
-  ```
-  docker build --build-arg REVISION=$(git rev-parse HEAD) -t dotnetrest .
-  ```
+  und CI/CD-Pipeline. `REVISION` wird beim Build gesetzt (siehe `docker build`
+  oben unter "Docker run").
 
 ## Konfiguration — Design-Entscheidungen
 

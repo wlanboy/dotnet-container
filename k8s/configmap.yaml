@@ -1,0 +1,25 @@
+# Beispiel-Overlay fuer appsettings.json (siehe Program.cs: optionales
+# /app/config/appsettings.Production.json, rangiert ueber dem image-gebackenen
+# appsettings.json, aber unter ENV-Variablen).
+# deployment.yaml referenziert diese ConfigMap als optional: true -> ohne sie
+# greift einfach die appsettings.json aus dem Image.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dotnetrest-config
+data:
+  appsettings.Production.json: |
+    {
+      "Logging": {
+        "LogLevel": {
+          "Default": "Warning",
+          "Microsoft.AspNetCore": "Warning"
+        }
+      },
+      "Kestrel": {
+        "Limits": {
+          "MaxRequestBodySize": 1048576,
+          "MaxConcurrentConnections": 500
+        }
+      }
+    }

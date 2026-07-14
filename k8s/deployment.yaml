@@ -1,0 +1,64 @@
+# Minimales Deployment fuer dotnetrest.
+# Deckt bewusst nur GC-Tuning, Graceful Shutdown und das /app/config-Overlay ab
+# (siehe Program.cs). Resources-Sizing, HPA, ConfigMap/Secret-Erstellung,
+# topologySpreadConstraints etc. sind separate Folgeschritte.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnetrest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dotnetrest
+  template:
+    metadata:
+      labels:
+        app: dotnetrest
+    spec:
+      # SIGTERM -> preStop-Sleep (Endpoint-Controller entfernt den Pod aus dem
+      # Service) -> ShutdownTimeout in Program.cs (30s) -> harter Kill.
+      # terminationGracePeriodSeconds muss preStop-Sleep + ShutdownTimeout ueberdauern.
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1654 # $APP_UID aus dem Dockerfile
+      containers:
+        - name: dotnetrest
+          image: registry.registry.svc.cluster.local:5000/dotnetrest:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DOTNET_gcServer
+              value: "1" # nur bei >=2 CPU-Kernen sinnvoll, siehe resources.limits.cpu unten
+            - name: DOTNET_GCHeapHardLimitPercent
+              value: "75" # respektiert das cgroup-Memory-Limit statt Host-RAM zu sehen
+            - name: DOTNET_GCDynamicAdaptationMode
+              value: "1" # DATAS, seit .NET 9 ohnehin Default, hier nur zur Doku
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "128Mi"
+            limits:
+              cpu: "2"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet: { path: /health/ready, port: 8080 }
+          livenessProbe:
+            httpGet: { path: /health/live, port: 8080 }
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 10"]
+          volumeMounts:
+            - name: config-overlay
+              mountPath: /app/config
+              readOnly: true
+      volumes:
+        # ConfigMap "dotnetrest-config" muss separat angelegt werden (Key:
+        # appsettings.Production.json). optional: true, damit der Pod auch
+        # ohne diese ConfigMap startet -> appsettings.json aus dem Image greift dann.
+        - name: config-overlay
+          configMap:
+            name: dotnetrest-config
+            optional: true
