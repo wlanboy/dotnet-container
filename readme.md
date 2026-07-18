@@ -17,8 +17,12 @@ dotnetrest/
 ├── dotnetrest.csproj
 ├── Dockerfile
 k8s/
+├── namespace.yaml                   # Namespace mit istio-injection=enabled
 ├── deployment.yaml                  # Deployment inkl. Health-Probes, GC-Tuning
 ├── configmap.yaml                   # Beispiel-Overlay für appsettings.Production.json
+├── service.yaml                     # ClusterIP-Service (Voraussetzung für Istio)
+├── peerauthentication.yaml          # Erzwingt mTLS STRICT im Namespace
+├── kubernetes-deployment.md         # Schritt-für-Schritt-Anleitung (Istio-ready)
 ```
 
 ## Endpunkte
@@ -61,13 +65,21 @@ docker run --rm -p 8080:8080 \
 ### Kubernetes
 
 ```bash
-kubectl apply -f k8s/configmap.yaml   # optional - ohne ConfigMap greift appsettings.json aus dem Image
-kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -n dotnetrest -f k8s/configmap.yaml   # optional - ohne ConfigMap greift appsettings.json aus dem Image
+kubectl apply -n dotnetrest -f k8s/deployment.yaml
+kubectl apply -n dotnetrest -f k8s/service.yaml
+kubectl apply -n dotnetrest -f k8s/peerauthentication.yaml
 ```
 
 `k8s/configmap.yaml` ist ein Beispiel-Overlay (Key `appsettings.Production.json`,
 gemountet unter `/app/config`, siehe `k8s/deployment.yaml`). Eigene Werte dort
 anpassen oder die ConfigMap weglassen, wenn die Image-Defaults ausreichen.
+
+Der Namespace ist mit `istio-injection: enabled` gelabelt und die
+`PeerAuthentication` erzwingt STRICT-mTLS zwischen den Sidecars — Details,
+Voraussetzungen (Istio muss im Cluster installiert sein) und Troubleshooting
+in [`k8s/kubernetes-deployment.md`](k8s/kubernetes-deployment.md).
 
 ## Warum Native AOT?
 

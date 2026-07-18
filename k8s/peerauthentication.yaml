@@ -1,0 +1,12 @@
+# Erzwingt mTLS zwischen Envoy-Sidecars fuer den gesamten Namespace dotnetrest.
+# Ohne diese Policy laesst Istio per Default PERMISSIVE zu (mTLS + Klartext
+# gleichzeitig moeglich) - STRICT lehnt unverschluesselten Sidecar-zu-Sidecar-
+# Traffic ab. Betrifft nur Pods MIT istio-proxy-Sidecar (siehe namespace.yaml).
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: dotnetrest
+spec:
+  mtls:
+    mode: STRICT

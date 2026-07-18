@@ -15,6 +15,7 @@ spec:
     metadata:
       labels:
         app: dotnetrest
+        version: v1 # Istio-Konvention: wird fuer Telemetrie/Subsets ausgewertet
     spec:
       # SIGTERM -> preStop-Sleep (Endpoint-Controller entfernt den Pod aus dem
       # Service) -> ShutdownTimeout in Program.cs (30s) -> harter Kill.
@@ -27,7 +28,8 @@ spec:
         - name: dotnetrest
           image: registry.registry.svc.cluster.local:5000/dotnetrest:latest
           ports:
-            - containerPort: 8080
+            - name: http-dotnetrest # Name muss zum Service-Port passen, siehe service.yaml
+              containerPort: 8080
           env:
             - name: DOTNET_gcServer
               value: "1" # nur bei >=2 CPU-Kernen sinnvoll, siehe resources.limits.cpu unten

@@ -1,0 +1,16 @@
+# ClusterIP-Service fuer dotnetrest. Wird von Istio fuer Traffic-Routing,
+# mTLS und Telemetrie benoetigt (Envoy-Sidecar haengt sich an den Service,
+# nicht an einzelne Pods). Port-Name mit "http-"-Praefix, damit Istio das
+# L7-Protokoll erkennt und HTTP-Features (Retries, Metriken, Tracing) greifen
+# - ohne Namenskonvention faellt Istio auf reines TCP-Passthrough zurueck.
+apiVersion: v1
+kind: Service
+metadata:
+  name: dotnetrest
+spec:
+  selector:
+    app: dotnetrest
+  ports:
+    - name: http-dotnetrest
+      port: 8080
+      targetPort: 8080

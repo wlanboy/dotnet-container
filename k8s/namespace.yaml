@@ -1,0 +1,10 @@
+# Eigener Namespace fuer dotnetrest, mit Istio-Sidecar-Injection per Label.
+# istio-injection=enabled wirkt auf alle Pods, die NACH dem Anlegen des Labels
+# in diesem Namespace erzeugt werden - bereits laufende Pods brauchen einen
+# Rollout-Restart, damit der istio-proxy-Sidecar nachtraeglich injiziert wird.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dotnetrest
+  labels:
+    istio-injection: enabled
