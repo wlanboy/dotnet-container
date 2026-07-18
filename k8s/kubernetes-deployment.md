@@ -30,9 +30,9 @@ konkreter Hostname/Ingress-Gateway feststeht.
 - `kubectl`-Kontext zeigt auf den richtigen Cluster.
 - Optional, aber hilfreich zur Kontrolle: [`istioctl`](https://istio.io/latest/docs/reference/commands/istioctl/)
   CLI installiert.
-- Image liegt bereits in der Registry (siehe `tekton/tekton.md` bzw.
-  `readme.md` für den Build-Weg), z. B.
-  `registry.registry.svc.cluster.local:5000/dotnetrest:latest`.
+- Image liegt bereits in der Registry (siehe `.github/workflows/dockerpublish.yml`
+  bzw. `readme.md` für den Build-Weg), z. B.
+  `wlanboy/dotnet-container:latest`.
 
 ## 1. Namespace mit Sidecar-Injection anlegen
 

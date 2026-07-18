@@ -26,7 +26,7 @@ spec:
         runAsUser: 1654 # $APP_UID aus dem Dockerfile
       containers:
         - name: dotnetrest
-          image: registry.registry.svc.cluster.local:5000/dotnetrest:latest
+          image: wlanboy/dotnet-container:latest
           ports:
             - name: http-dotnetrest # Name muss zum Service-Port passen, siehe service.yaml
               containerPort: 8080
