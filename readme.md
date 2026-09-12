@@ -48,6 +48,13 @@ Schreibende Endpunkte (POST/PUT/DELETE) sind aktuell nicht implementiert — die
 2. `/app/config/appsettings.Production.json` (Overlay, optional)
 3. Environment-Variablen (z.B. `ASPNETCORE_...`, per ConfigMap/Secret als env oder direkt gesetzt)
 
+### Updates
+```
+dotnet list package --outdated
+dotnet tool install --global dotnet-outdated-tool 
+dotnet outdated -u
+```
+
 ### Docker run
 
 ```bash
