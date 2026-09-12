@@ -20,6 +20,15 @@
 
     <!-- Kernschalter: nativer Maschinencode statt IL+JIT -> schnellerer Kaltstart, weniger Speicher, kein Runtime-Overhead im Container -->
     <PublishAot>true</PublishAot>
+
+    <!-- Deaktiviert die EventSource/EventListener-Infrastruktur (ETW/EventPipe-Traces) ->
+         wird durch DOTNET_EnableDiagnostics=0 im Container ohnehin nicht genutzt, der
+         Trimmer kann den zugehörigen Code dadurch zusätzlich aus dem AOT-Binary entfernen -->
+    <EventSourceSupport>false</EventSourceSupport>
+    <!-- Deaktiviert die automatische Activity-Propagation von DiagnosticSource/HttpClient
+         (Grundlage für Distributed Tracing) -> ohne Tracing-Backend hier ungenutzter Code,
+         spart Overhead pro Request und Binary-Größe -->
+    <HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
   </PropertyGroup>
 
   <ItemGroup>
