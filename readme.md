@@ -134,11 +134,13 @@ JSON-Source-Generator (`AppJsonSerializerContext`) statt Standard-Serializer.
 
 ## Konfiguration — Design-Entscheidungen
 
-- **JSON-Konsolen-Logging in Produktion** (`appsettings.json`,
-  `Logging:Console:FormatterName=json`): strukturierte Logs lassen sich direkt
-  von Log-Aggregatoren (Loki, ELK, Cloud-Provider-Logging) parsen, ohne
-  Regex-Gefummel. In `appsettings.Development.json` wird das für lokale
-  Entwicklung auf das lesbarere `simple`-Format zurückgesetzt.
+- **JSON-Konsolen-Logging in Produktion** (`Program.cs`,
+  `builder.Logging.AddJsonConsole()` außerhalb von Development): strukturierte
+  Logs lassen sich direkt von Log-Aggregatoren (Loki, ELK, Cloud-Provider-Logging)
+  parsen, ohne Regex-Gefummel. Lokal (Development) bleibt das lesbarere
+  `simple`-Format. `Logging:Console:FormatterName` in den appsettings wirkt mit
+  `CreateSlimBuilder` nicht: Der Slim-Builder ruft intern `AddSimpleConsole()` auf,
+  das den Formatter fest auf `simple` setzt.
 - **Kestrel-Limits** (`MaxRequestBodySize`, `MaxConcurrentConnections`): schützt
   vor überdimensionierten Requests bzw. Verbindungs-Exhaustion, bevor ein
   vorgelagerter Reverse Proxy/Ingress überhaupt greift.

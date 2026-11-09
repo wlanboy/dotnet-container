@@ -3,6 +3,8 @@
 # appsettings.json, aber unter ENV-Variablen).
 # deployment.yaml referenziert diese ConfigMap als optional: true -> ohne sie
 # greift einfach die appsettings.json aus dem Image.
+# Die Datei wird nur beim Start gelesen (reloadOnChange: false). Nach Aenderungen:
+#   kubectl rollout restart deployment/dotnetrest
 apiVersion: v1
 kind: ConfigMap
 metadata:

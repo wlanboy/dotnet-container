@@ -4,11 +4,24 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 var builder = WebApplication.CreateSlimBuilder(args);
 
 // /app/config-Overlay (K8s-Volume) rangiert ueber den image-gebackenen appsettings.json,
-// aber unter ENV/ConfigMap-Werten -> AddEnvironmentVariables() erneut zuletzt aufrufen,
-// damit ENV weiterhin die hoechste Prioritaet behaelt
+// aber unter ENV-Variablen und Kommandozeilen-Argumenten -> beide erneut anhaengen,
+// damit die Default-Reihenfolge (JSON < ENV < Args) erhalten bleibt.
+// reloadOnChange: false, weil Kubernetes ConfigMap-Updates per Tausch des ..data-Symlinks
+// ausrollt, den der FileSystemWatcher meist nicht sieht; Kestrel-Limits werden ohnehin nur
+// beim Start gelesen. Aenderungen an der ConfigMap -> kubectl rollout restart.
 builder.Configuration
-    .AddJsonFile("/app/config/appsettings.Production.json", optional: true, reloadOnChange: true)
-    .AddEnvironmentVariables();
+    .AddJsonFile("/app/config/appsettings.Production.json", optional: true, reloadOnChange: false)
+    .AddEnvironmentVariables()
+    .AddCommandLine(args);
+
+// CreateSlimBuilder registriert intern AddSimpleConsole(), das FormatterName fest auf "simple"
+// setzt und Logging:Console:FormatterName aus der Konfiguration damit ueberschreibt.
+// Ausserhalb von Development deshalb explizit den JSON-Formatter aktivieren (wird zuletzt
+// konfiguriert und gewinnt).
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Logging.AddJsonConsole();
+}
 
 // Laesst laufenden Requests bei SIGTERM bis zu 30s Zeit, bevor der Host hart beendet wird
 builder.Services.Configure<HostOptions>(o => o.ShutdownTimeout = TimeSpan.FromSeconds(30));

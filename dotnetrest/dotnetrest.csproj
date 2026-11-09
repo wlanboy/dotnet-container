@@ -29,7 +29,17 @@
          (Grundlage für Distributed Tracing) -> ohne Tracing-Backend hier ungenutzter Code,
          spart Overhead pro Request und Binary-Größe -->
     <HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
+
+    <!-- Native AOT legt die Debug-Symbole als separate dotnetrest.dbg (~25 MB) neben das Binary.
+         Nicht in den Publish-Ordner (und damit nicht ins Image) kopieren; die Datei bleibt
+         unter bin/ bzw. obj/ erhalten, falls Symbole für Crash-Analysen gebraucht werden -->
+    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Dev-Config gehört nicht ins Production-Image -->
+    <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- CreateSlimBuilder (Program.cs) enthält OpenAPI-Support nicht standardmäßig -> für MapOpenApi manuell nachgezogen -->
