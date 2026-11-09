@@ -38,6 +38,31 @@ k8s/
 Schreibende Endpunkte (POST/PUT/DELETE) sind aktuell nicht implementiert — die
 `TodoService`-Daten sind rein statisch für Demo-Zwecke.
 
+### OpenAPI
+
+Das Paket `Microsoft.AspNetCore.OpenApi` ist bewusst im Production-Binary enthalten.
+`AddOpenApi()` wird immer registriert, der Endpunkt `/openapi/v1.json` aber nur bei
+`ASPNETCORE_ENVIRONMENT=Development` gemappt (`Program.cs`). Das Image setzt keine
+Environment, läuft also als `Production`, dort liefert `/openapi/v1.json` 404.
+
+Damit gibt es ein Binary für alle Umgebungen, ohne Build-Varianten oder bedingte
+Paketreferenzen. Der Preis ist etwas mehr Binary-Größe für Code, der in Production nicht
+läuft.
+
+Dokument lokal abrufen:
+
+```bash
+dotnet run --project dotnetrest          # launchSettings.json setzt Development
+curl http://localhost:5230/openapi/v1.json
+```
+
+Im Container nur zum Debuggen, nicht in Kubernetes:
+
+```bash
+docker run --rm -p 8080:8080 -e ASPNETCORE_ENVIRONMENT=Development dotnetrest
+curl http://localhost:8080/openapi/v1.json
+```
+
 ## Konfiguration überschreiben (`/app/config`-Overlay)
 
 `Program.cs` lädt zusätzlich zur image-gebackenen `appsettings.json` optional

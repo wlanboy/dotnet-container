@@ -42,7 +42,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- CreateSlimBuilder (Program.cs) enthält OpenAPI-Support nicht standardmäßig -> für MapOpenApi manuell nachgezogen -->
+    <!-- CreateSlimBuilder (Program.cs) enthält OpenAPI-Support nicht standardmäßig -> für MapOpenApi manuell nachgezogen.
+         Bewusst auch im Production-Binary, der Endpunkt wird nur in Development gemappt (siehe readme.md, Abschnitt OpenAPI). -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
   </ItemGroup>
 
