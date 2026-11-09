@@ -9,6 +9,7 @@ kubectl apply -f "$SCRIPT_DIR/namespace.yaml"
 
 kubectl apply -n "$NAMESPACE" -f "$SCRIPT_DIR/configmap.yaml"
 kubectl apply -n "$NAMESPACE" -f "$SCRIPT_DIR/deployment.yaml"
+kubectl apply -n "$NAMESPACE" -f "$SCRIPT_DIR/pdb.yaml"
 kubectl apply -n "$NAMESPACE" -f "$SCRIPT_DIR/service.yaml"
 kubectl apply -n "$NAMESPACE" -f "$SCRIPT_DIR/peerauthentication.yaml"
 

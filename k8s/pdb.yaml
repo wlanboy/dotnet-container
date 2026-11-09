@@ -1,0 +1,12 @@
+# Haelt bei freiwilligen Unterbrechungen (Node-Drain, Cluster-Upgrade) mindestens
+# einen dotnetrest-Pod verfuegbar. Wirkt nur zusammen mit replicas >= 2 in
+# deployment.yaml, bei 1 Replica blockiert die PDB jeden Drain.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: dotnetrest
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: dotnetrest

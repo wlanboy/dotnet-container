@@ -9,6 +9,7 @@ NAMESPACE="dotnetrest"
 kubectl delete -n "$NAMESPACE" --ignore-not-found \
   -f "$SCRIPT_DIR/peerauthentication.yaml" \
   -f "$SCRIPT_DIR/service.yaml" \
+  -f "$SCRIPT_DIR/pdb.yaml" \
   -f "$SCRIPT_DIR/deployment.yaml" \
   -f "$SCRIPT_DIR/configmap.yaml"
 

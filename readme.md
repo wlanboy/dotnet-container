@@ -18,7 +18,8 @@ dotnetrest/
 ├── Dockerfile
 k8s/
 ├── namespace.yaml                   # Namespace mit istio-injection=enabled
-├── deployment.yaml                  # Deployment inkl. Health-Probes, GC-Tuning
+├── deployment.yaml                  # Deployment: 2 Replicas, Probes, Ressourcen, Security-Context
+├── pdb.yaml                         # PodDisruptionBudget (minAvailable: 1)
 ├── configmap.yaml                   # Beispiel-Overlay für appsettings.Production.json
 ├── service.yaml                     # ClusterIP-Service (Voraussetzung für Istio)
 ├── peerauthentication.yaml          # Erzwingt mTLS STRICT im Namespace
@@ -100,6 +101,7 @@ docker run --rm -p 8080:8080 \
 kubectl apply -f k8s/namespace.yaml
 kubectl apply -n dotnetrest -f k8s/configmap.yaml   # optional - ohne ConfigMap greift appsettings.json aus dem Image
 kubectl apply -n dotnetrest -f k8s/deployment.yaml
+kubectl apply -n dotnetrest -f k8s/pdb.yaml
 kubectl apply -n dotnetrest -f k8s/service.yaml
 kubectl apply -n dotnetrest -f k8s/peerauthentication.yaml
 ```

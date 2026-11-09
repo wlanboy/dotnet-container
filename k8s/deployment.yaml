@@ -1,13 +1,15 @@
-# Minimales Deployment fuer dotnetrest.
-# Deckt bewusst nur GC-Tuning, Graceful Shutdown und das /app/config-Overlay ab
-# (siehe Program.cs). Resources-Sizing, HPA, ConfigMap/Secret-Erstellung,
-# topologySpreadConstraints etc. sind separate Folgeschritte.
+# Deployment fuer dotnetrest.
+# Deckt GC-/Ressourcen-Sizing, Security-Context, Probes, Graceful Shutdown und das
+# /app/config-Overlay ab (siehe Program.cs). HPA, Secret-Erstellung und
+# topologySpreadConstraints sind separate Folgeschritte.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dotnetrest
 spec:
-  replicas: 1
+  # 2 Replicas + PodDisruptionBudget (pdb.yaml): ein Node-Drain nimmt nie beide
+  # Pods gleichzeitig weg.
+  replicas: 2
   selector:
     matchLabels:
       app: dotnetrest
@@ -21,33 +23,51 @@ spec:
       # Service) -> ShutdownTimeout in Program.cs (30s) -> harter Kill.
       # terminationGracePeriodSeconds muss preStop-Sleep + ShutdownTimeout ueberdauern.
       terminationGracePeriodSeconds: 45
+      # Die App spricht nicht mit der Kubernetes-API -> kein Token im Pod.
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 1654 # $APP_UID aus dem Dockerfile
+        runAsGroup: 1654
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: dotnetrest
           image: wlanboy/dotnet-container:latest
           ports:
             - name: http-dotnetrest # Name muss zum Service-Port passen, siehe service.yaml
               containerPort: 8080
-          env:
-            - name: DOTNET_gcServer
-              value: "1" # nur bei >=2 CPU-Kernen sinnvoll, siehe resources.limits.cpu unten
-            - name: DOTNET_GCHeapHardLimitPercent
-              value: "75" # respektiert das cgroup-Memory-Limit statt Host-RAM zu sehen
-            - name: DOTNET_GCDynamicAdaptationMode
-              value: "1" # DATAS, seit .NET 9 ohnehin Default, hier nur zur Doku
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          # GC: Workstation-GC (Default). Server-GC (DOTNET_gcServer=1) bringt bei
+          # 1 CPU-Limit nichts, gemessen kein Durchsatz-Unterschied.
+          # Heap-Limit: .NET setzt im Container ohne weitere Angabe 75 % des
+          # cgroup-Memory-Limits als GCHeapHardLimit, daher keine DOTNET_GC*-Variablen.
           resources:
+            # Gemessen: 11-18 MiB RSS unter Last (docker, 2 CPU). Istio-Sidecar hat
+            # eigene Requests/Limits, die hier nicht mitzaehlen.
             requests:
-              cpu: "500m"
-              memory: "128Mi"
+              cpu: "50m"
+              memory: "32Mi"
             limits:
-              cpu: "2"
-              memory: "256Mi"
+              cpu: "1"
+              memory: "96Mi"
+          # Native AOT startet in Millisekunden -> keine startupProbe noetig.
+          # Liveness reagiert langsamer als Readiness: ein kurz ueberlasteter Pod
+          # faellt erst aus dem Service, bevor er neu gestartet wird.
           readinessProbe:
             httpGet: { path: /health/ready, port: 8080 }
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
           livenessProbe:
             httpGet: { path: /health/live, port: 8080 }
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
           lifecycle:
             preStop:
               exec:
