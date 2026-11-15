@@ -33,5 +33,6 @@ jobs:
       run: dotnet build ./dotnetrest.slnx --no-restore --configuration Release
 
     - name: Test
-      # Führt Unit-Tests aus, falls vorhanden
-      run: dotnet test ./dotnetrest.slnx --no-build --configuration Release --verbosity normal
+      # Integrationstests aus dotnetrest.Tests (WebApplicationFactory). global.json schaltet
+      # dotnet test auf Microsoft.Testing.Platform um, dort wird die Solution per --solution übergeben.
+      run: dotnet test --solution ./dotnetrest.slnx --no-build --configuration Release --output detailed
