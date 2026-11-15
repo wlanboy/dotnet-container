@@ -16,6 +16,10 @@ dotnetrest/
 ├── appsettings.Development.json     # Override für lokale Entwicklung
 ├── dotnetrest.csproj
 ├── Dockerfile
+dotnetrest.Tests/                   # Integrationstests (xUnit v3, WebApplicationFactory)
+├── TodoApiFactory.cs                # startet die App in-memory mit fester Uhrzeit (FakeTimeProvider)
+├── TodoEndpointsTests.cs            # /todos, /todos/{id} (200/404), JSON-Format
+├── HealthEndpointsTests.cs          # /health/live, /health/ready
 k8s/
 ├── namespace.yaml                   # Namespace mit istio-injection=enabled
 ├── deployment.yaml                  # Deployment: 2 Replicas, Probes, Ressourcen, Security-Context
@@ -63,6 +67,21 @@ Im Container nur zum Debuggen, nicht in Kubernetes:
 docker run --rm -p 8080:8080 -e ASPNETCORE_ENVIRONMENT=Development dotnetrest
 curl http://localhost:8080/openapi/v1.json
 ```
+
+## Tests
+
+```bash
+dotnet test --solution dotnetrest.slnx
+```
+
+`global.json` stellt `dotnet test` auf die Microsoft.Testing.Platform um, die xunit.v3
+mitbringt. Deshalb wird die Solution mit `--solution` übergeben.
+
+Die Tests starten die App per `WebApplicationFactory<Program>` im Testprozess, ohne AOT
+und ohne Container. `TodoService` bekommt die Uhrzeit über `TimeProvider`, die Tests
+setzen einen `FakeTimeProvider` mit festem Datum ein. Das Testprojekt referenziert die
+Self-Contained-App und braucht dafür
+`ValidateExecutableReferencesMatchSelfContained=false`.
 
 ## Konfiguration überschreiben (`/app/config`-Overlay)
 

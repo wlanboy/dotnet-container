@@ -32,6 +32,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 
 builder.Services.AddOpenApi();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<TodoService>();
 builder.Services.AddHealthChecks()
     .AddCheck("live", () => HealthCheckResult.Healthy(), tags: ["live"])
