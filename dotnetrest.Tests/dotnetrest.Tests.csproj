@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <!-- dotnetrest ist SelfContained (für den AOT-Publish), das Testprojekt nicht -> ohne diesen
+         Schalter bricht der Build mit NETSDK1151 ab. Die Tests laden die App per
+         WebApplicationFactory als normale Assembly in den Testprozess, das Self-Contained-Layout
+         wird dafür nicht gebraucht. Kein PublishAot hier: Testprojekte werden nicht publiziert. -->
+    <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
+    <!-- xunit.v3 bringt die Microsoft.Testing.Platform mit, das Testprojekt ist selbst eine Exe.
+         dotnet test nutzt MTP über den Eintrag "test.runner" in ../global.json. -->
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../dotnetrest/dotnetrest.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.11.0" />
+    <PackageReference Include="xunit.v3" Version="4.0.3" />
+  </ItemGroup>
+
+</Project>

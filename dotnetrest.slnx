@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="dotnetrest.Tests/dotnetrest.Tests.csproj" />
   <Project Path="dotnetrest/dotnetrest.csproj" />
 </Solution>

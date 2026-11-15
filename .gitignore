@@ -1,8 +1,9 @@
+# Gilt für alle Projekte der Solution (dotnetrest.slnx)
+
 *.swp
 *.*~
 project.lock.json
 .DS_Store
-*.pyc
 nupkg/
 
 # Visual Studio Code
@@ -43,7 +44,9 @@ msbuild.log
 msbuild.err
 msbuild.wrn
 
-# Node.js build artifacts
-node_modules/
-package-lock.json
-package.json
+# Testergebnisse (dotnet test, Microsoft.Testing.Platform)
+[Tt]est[Rr]esults/
+*.trx
+coverage*.json
+coverage*.xml
+*.coverage
